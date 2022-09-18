@@ -1,3 +1,4 @@
-/out
-log
-dump
+out/
+.idea/
+/log
+/dump
