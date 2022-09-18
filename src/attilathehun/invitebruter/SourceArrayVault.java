@@ -25,6 +25,9 @@ public class SourceArrayVault {
      * @param array source array to be wrapped into the vault
      */
     public SourceArrayVault(int[] array) {
+        if(!SourceArrayVault.isSourceArray(array)) {
+            throw new NotASourceArrayException();
+        }
         this.source = array;
     }
 
@@ -55,73 +58,76 @@ public class SourceArrayVault {
      * @param array array to become the source one
      */
     private void inject(int[] array) {
+        if(!SourceArrayVault.isSourceArray(array)) {
+            throw new NotASourceArrayException();
+        }
         this.source = array;
     }
 
     /**
      * Adds one to the source array
-     * @return true if successful
      */
-    public boolean increase() {
+    public void increase() {
         if(!SourceArrayVault.hasBoundary()) {
-            return false;
+            throw new MissingBoundaryException();
         }
-        final int value = 1;
-        return this.add(SourceArrayVault.sourceArrayFromNumber(value));
+        System.out.println("increase() call");
+        this.add(1);
     }
 
     /**
      * Adds a given possibilities count from the source array within
      * @param value possibilities to be added
-     * @return true if successful
      */
-    public boolean add(long value) {
+    public void add(long value) {
         if(!SourceArrayVault.hasBoundary()) {
-            return false;
+            throw new MissingBoundaryException();
         }
 
-        return this.add(SourceArrayVault.sourceArrayFromNumber(value));
+        this.add(SourceArrayVault.sourceArrayFromNumber(value));
     }
 
     /**
      * Adds an integer array to the source array while obliging source array rules
      * @param array to me added to the source array
-     * @return true if successful
      */
-    public boolean add(int[] array) {
+    public void add(int[] array) {
         if (!SourceArrayVault.hasBoundary()) {
-            return false;
+            throw new MissingBoundaryException();
         }
+
+        System.out.print("array: " + Arrays.toString(array));
 
         long arraysSum = SourceArrayVault.summarizeSourceArray(source) + SourceArrayVault.summarizeSourceArray(array);
         boolean hasEnoughCapacity = SourceArrayVault.summarizeMaxSourceArrayOfLength(source.length) - arraysSum > 0;
 
         if (!hasEnoughCapacity) {
-            this.source = SourceArrayVault.prolongArray(source, SourceArrayVault.getLengthFromNumber(arraysSum));
+            source = SourceArrayVault.prolongArray(source, SourceArrayVault.getLengthFromNumber(arraysSum));
+        }
+        if(source.length > array.length) {
+            array = SourceArrayVault.prolongArray(array, source.length);
         }
 
         int transitionValue = 0;
 
-        for (int i = 0; i < source.length; i++) {
+        for (int i = source.length - 1; i > 0; i--) {
             array[i] += transitionValue;
-            transitionValue = 0;
             transitionValue = (source[i] + array[i]) / SourceArrayVault.getBoundary();
-            source[i] += (source[i] + array[i]) % SourceArrayVault.getBoundary();
+            source[i] = (source[i] + array[i]) % SourceArrayVault.getBoundary();
         }
+        System.out.println(" source: " + Arrays.toString(source));
 
-        return true;
     }
 
     /**
      * Removes one from the source array
-     * @return true if successful
      */
-    public boolean decrease() {
+    public void decrease() {
         if (!SourceArrayVault.hasBoundary()) {
-            return false;
+            throw new MissingBoundaryException();
         }
         final int value = 1;
-        return this.subtract(SourceArrayVault.sourceArrayFromNumber(value));
+        this.subtract(SourceArrayVault.sourceArrayFromNumber(value));
     }
 
     /**
@@ -129,21 +135,20 @@ public class SourceArrayVault {
      * @param value possibilities to be subtracted
      * @return true if successful
      */
-    public boolean subtract(long value) {
+    public void subtract(long value) {
         if(!SourceArrayVault.hasBoundary()) {
-            return false;
+            throw new MissingBoundaryException();
         }
 
-        return this.subtract(SourceArrayVault.sourceArrayFromNumber(value));
+        this.subtract(SourceArrayVault.sourceArrayFromNumber(value));
     }
 
     //TODO
-    public boolean subtract(int[] array) {
+    public void subtract(int[] array) {
         if(!SourceArrayVault.hasBoundary()) {
-            return false;
+            throw new MissingBoundaryException();
         }
 
-        return true;
     }
 
     /**
@@ -161,6 +166,22 @@ public class SourceArrayVault {
      */
     public boolean equals(int[] array) {
         return Arrays.equals(source, array);
+    }
+
+    /**
+     * Creates a copy of the vault
+     * @return SourceArrayVault with identical source array
+     */
+    public SourceArrayVault copy() {
+        return new SourceArrayVault(this.array());
+    }
+
+    /**
+     * Static implementation of SourceArrayVault#copy()
+     * @return SourceArrayVault with identical source array
+     */
+    public static SourceArrayVault copy(SourceArrayVault vault) {
+        return new SourceArrayVault(vault.array());
     }
 
     /**
@@ -182,7 +203,7 @@ public class SourceArrayVault {
      */
     private static int[] sourceArrayFromNumber(long number) {
         if(!SourceArrayVault.hasBoundary()) {
-            return new int[]{};
+            throw new MissingBoundaryException();
         }
         int[] result = new int[SourceArrayVault.getLengthFromNumber(number)];
         long left = number;
@@ -209,6 +230,7 @@ public class SourceArrayVault {
             left -= interCalculation * result[i];
 
         }
+        System.out.println("sourceArray: " + Arrays.toString(result) + " number: " + number);
         return result;
     }
 
@@ -219,7 +241,7 @@ public class SourceArrayVault {
      */
     private static int getLengthFromNumber(long number) {
         if(!SourceArrayVault.hasBoundary()) {
-            return 0;
+            throw new MissingBoundaryException();
         }
         int length = 1;
         while (true) {
@@ -230,7 +252,7 @@ public class SourceArrayVault {
                 break;
             }
         }
-        //System.out.println("Length calculated: " + length);
+        System.out.println("Length calculated: " + length);
         return length;
     }
 
@@ -241,7 +263,7 @@ public class SourceArrayVault {
      */
     public static boolean isSourceArray(int[] array) {
         if(!SourceArrayVault.hasBoundary()) {
-            return false; // there is no source array without a boundary
+            throw new MissingBoundaryException();
         }
 
         for (int i : array) {
@@ -284,6 +306,9 @@ public class SourceArrayVault {
      * @param value the value to assign
      */
     public void set(int index, int value) {
+        if (value > SourceArrayVault.getBoundary() - 1 || value < 0) {
+            throw new OutOfBoundsException();
+        }
         source[index] = value;
     }
 
@@ -293,8 +318,11 @@ public class SourceArrayVault {
      * @return total possibilities of that array
      */
     public static long summarizeSourceArray(int[] array) {
+        if (!SourceArrayVault.hasBoundary()) {
+            throw new MissingBoundaryException();
+        }
         long sum = 0;
-        if(!(array.length > 1)) {
+        if (!(array.length > 1)) {
             return sum;
         }
         for (int i = 0; i < array.length; i++) {
@@ -315,6 +343,9 @@ public class SourceArrayVault {
      * @return maximum possibilities of such array
      */
     public static long summarizeMaxSourceArrayOfLength(int length) {
+        if (!SourceArrayVault.hasBoundary()) {
+            throw new MissingBoundaryException();
+        }
         int[] array = new int[length];
         //System.out.println("array: " + Arrays.toString(array));
         Arrays.fill(array, SourceArrayVault.getBoundary() - 1);
@@ -333,18 +364,39 @@ public class SourceArrayVault {
         final int lengthDifference = newLenght - array.length;
 
         if (lengthDifference < 0) {
-            int[] empty = {};
-            return empty;
+            return new int[]{};
         }
 
         for (int i = 0; i < result.length; i++) {
             if(i < lengthDifference) {
                 result[i] = 0;
             } else {
-                result[i] = array[i];
+                result[i] = array[i - lengthDifference];
             }
         }
+        //System.out.println(Arrays.toString(array) + " : " + newLenght + " : " + Arrays.toString(result));
         return result;
+    }
+
+    //TODO
+    /**
+     * Converts int array into a SourceArrayVault
+     * @param array to be converted
+     * @return SourceArrayVault with a legal source array within
+     */
+    public static SourceArrayVault convert(int[] array) {
+        return null;
+    }
+
+    public static class MissingBoundaryException extends RuntimeException {
+
+    }
+    public static class OutOfBoundsException extends  RuntimeException {
+
+    }
+
+    public static class NotASourceArrayException extends  RuntimeException {
+
     }
 
 }

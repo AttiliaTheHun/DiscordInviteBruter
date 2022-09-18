@@ -9,7 +9,7 @@ public class Launcher {
     private final int ESTIMATED_MB_OF_MEMORY_PER_THREAD = 60;
     private final int CHARSET_LENGTH = Bruter.getCharsetLength();
 
-    private Session session;
+    private SessionManager.Session session;
 
     private final Logger logger = new Logger();
 
@@ -24,11 +24,13 @@ public class Launcher {
     }
 
     public void init() {
+        SessionManager manager = new SessionManager();
         SourceArrayVault.setBoundary(CHARSET_LENGTH - 1);
-        session = new Session();
-        session.setCharsetLength(CHARSET_LENGTH);
-        session.setThreadCount(calculateThreadCount());
-        session.setLogger(getLogger());
+        manager.setCharsetLength(CHARSET_LENGTH);
+        //manager.setThreadCount(calculateThreadCount());
+        manager.setThreadCount(1);
+        manager.setLogger(getLogger());
+        session = manager.create();
     }
 
     /**

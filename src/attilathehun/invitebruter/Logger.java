@@ -39,7 +39,7 @@ public class Logger implements Runnable, BruteListener{
     private void log(String s){
         if(consoleMode) {
             return; // in case of console mode we do not want to get spammed by regular logs
-            // we only care about successful attemts
+            // we only care about successful attempts
             // sadly, we lose "Thread #n finished" quotes, but covering this would need to
             // redesign the logging architecture even more
         }

@@ -1,8 +1,6 @@
 package attilathehun.invitebruter;
 
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +14,8 @@ public class Bruter implements Runnable {
     private int[] endPosition; // Data for the last attempt of this particular Bruter
     private int name;
     private boolean running = true;
+
+    private InviteManager manager = new InviteManager(this);
 
     /**
      * Default constructor for multithrea*ding* support
@@ -39,61 +39,28 @@ public class Bruter implements Runnable {
             if(currentPosition.equals(endPosition)){
                 finish();
             }
-            tryInvite(generateLink());
+            attempt();
             currentPosition.increase();
         }
     }
 
     /**
-     * Tries an invite link and logs attempt result
-     * @param inviteLink the URL address to try
+     * Tries whether invite link of the currentPosition is valid and creates proper record
      */
-    private void tryInvite(String inviteLink) {
-
+    private void attempt() {
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(inviteLink).openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept-Charset", "UTF-8");
-            InputStream response = connection.getInputStream();
-            String input =  new String(response.readAllBytes());
-            response.close();
-            String title = input.substring(input.indexOf("<title>") + "<title>".length(), input.indexOf("</title>"));
-            int responseCode = connection.getResponseCode();
-            String messageToLog;
-            boolean successful = false;
-            if(title.equals("Discord")) {
-                messageToLog = "Fail - Invite: " + inviteLink;
-            }else {
-                messageToLog = "Server: " + title + " - Invite: " + inviteLink;
-                successful = true;
-            }
-            String signature = " #" + name + " " + responseCode + "\n";
-            messageToLog += signature;
-            if(successful) {
-                logAttemptSuccessful(messageToLog);
+            InviteManager.Invite invite = InviteManager.resolve(InviteManager.generateLink(currentPosition));
+            String signature = " #" + name + " " + invite.responseCode() + "\n";
+            if (invite.isValid()) {
+                String message = "Server: " + invite.name() + " - Invite: " + invite.link() + signature;
+                logAttemptSuccessful(message);
             } else {
-                logAttemptUnsuccessful(messageToLog);
+                String message = "Fail - Invite: " + invite.link() + signature;
+                logAttemptUnsuccessful(message);
             }
-
-            /**
-             * @catch MalformedURLException
-             * @catch ProtocolException
-             */
-        }catch(Exception e) {
+        } catch (IOException e) {
             logMessage(e.getMessage());
         }
-    }
-
-    /**
-     * Generates invite link for currentPosition
-     * @return invite link based on current attempt base
-     */
-    private String generateLink(){
-        StringBuilder builder = new StringBuilder();
-        for(int number : currentPosition.array()) {
-            builder.append(Bruter.getCharset().charAt(number));
-        }
-        return Bruter.getBaseURL().concat(new String(builder));
     }
 
     /**

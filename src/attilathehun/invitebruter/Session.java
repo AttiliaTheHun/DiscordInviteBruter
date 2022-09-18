@@ -20,7 +20,8 @@ public class Session implements Serializable {
 
     }
 
-    public Session() {
+    public Session(int charsetLength) {
+        setCharsetLength(charsetLength);
         Arrays.fill(END, charsetLength - 1);
     }
 
@@ -30,6 +31,7 @@ public class Session implements Serializable {
     }
 
     public void start() {
+        initThreads();
         startThreads();
     }
 
@@ -58,7 +60,7 @@ public class Session implements Serializable {
      */
     private void initThreads(){
         SourceArrayVault[] startingPositions = getStartingPositions();
-        int[][] endingPositions = getEndingPositions();
+        int[][] endingPositions = getEndingPositions(startingPositions);
         this.bruters = new Bruter[getThreadCount()];
         this.threads = new Thread[getThreadCount()];
         for(int i = 0; i < bruters.length; i++){
@@ -97,6 +99,17 @@ public class Session implements Serializable {
         for (int i = 0; i < getThreadCount(); i++) {
             endingPositions[i] = SourceArrayVault.fromNumber(END_POSSIBILITIES - possibilitiesPerThread * i).array();
         }
+        return endingPositions;
+    }
+
+    private int[][] getEndingPositions(SourceArrayVault[] startingPositions) {
+        long END_POSSIBILITIES = SourceArrayVault.summarizeSourceArray(getEnd());
+        int[][] endingPositions = new int[getThreadCount()][];
+        long possibilitiesPerThread = calculateTotalPossibilities() / getThreadCount();
+        for (int i = 0; i < getThreadCount() - 1; i++) {
+            endingPositions[i] = startingPositions[i + 1].array();
+        }
+        endingPositions[endingPositions.length - 1] = getEnd();
         return endingPositions;
     }
 
