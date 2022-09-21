@@ -2,11 +2,12 @@ package attilathehun.invitebruter;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 public class Launcher {
 
     private final int MAX_THREAD_COUNT = 50;
-    private final int ESTIMATED_MB_OF_MEMORY_PER_THREAD = 60;
+    private final int ESTIMATED_MB_OF_MEMORY_PER_THREAD = 20;
     private final int CHARSET_LENGTH = Bruter.getCharsetLength();
 
     private SessionManager.Session session;
@@ -25,10 +26,10 @@ public class Launcher {
 
     public void init() {
         SessionManager manager = new SessionManager();
-        SourceArrayVault.setBoundary(CHARSET_LENGTH - 1);
+        SourceArrayVault.setBoundary(CHARSET_LENGTH);
         manager.setCharsetLength(CHARSET_LENGTH);
-        //manager.setThreadCount(calculateThreadCount());
-        manager.setThreadCount(1);
+        manager.setThreadCount(calculateThreadCount());
+        //manager.setThreadCount(1);
         manager.setLogger(getLogger());
         session = manager.create();
     }
@@ -48,12 +49,18 @@ public class Launcher {
 
     public void load(String filename) {
         session = SessionManager.load(filename);
-        getLogger().logMessage("Session restore from file \"" + filename + "\" - " +  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()));
+        if (session == null) {
+            return;
+        }
+        getLogger().logMessage("Session restored from file \"" + filename + "\" - " +  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()));
         loadInit();
     }
 
     public void load() {
         session = SessionManager.load();
+        if (session == null) {
+            return;
+        }
         getLogger().logMessage("Session restored - " +  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()));
         loadInit();
     }
@@ -69,11 +76,15 @@ public class Launcher {
         getLogger().logMessage("Session paused - " +  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()));
     }
 
-    public void saveN() {
+    public String saveN() {
         String filename = SessionManager.saveN(session);
         getLogger().logMessage("Session paused into file \"" + filename + "\" - " +  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()));
+        return filename;
     }
 
+    public ArrayList<String> list() {
+        return SessionManager.savedSessions();
+    }
     public Logger getLogger() {
         return logger;
     }

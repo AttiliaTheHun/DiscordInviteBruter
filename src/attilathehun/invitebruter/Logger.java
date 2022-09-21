@@ -10,7 +10,9 @@ import java.nio.charset.StandardCharsets;
 
 public class Logger implements Runnable, BruteListener{
 
-    private volatile boolean running = true;
+    private static boolean isInstanceRunning = false;
+
+    private volatile boolean running = false;
 
     private File dumpFile;
     private FileOutputStream logFileOutputStream;
@@ -26,6 +28,8 @@ public class Logger implements Runnable, BruteListener{
      */
     @Override
     public void run() {
+        Logger.isInstanceRunning = true;
+        running = true;
         while (running) {
             Thread.onSpinWait();
             // Runs indefinitely, the Logger is closed via an external call to Logger#close()
@@ -103,6 +107,16 @@ public class Logger implements Runnable, BruteListener{
         }
     }
 
+    public static void clear() {
+        if (Logger.hasInstanceRunning()) {
+            throw new RuntimeException("Cannot clear when a Logger instance is running");
+        }
+        File logFile = new File("log");
+        File dumpFile = new File("dump");
+        logFile.delete();
+        dumpFile.delete();
+    }
+
     /**
      * Public method to log successful attempt results
      * @param message the message to be logged and dumped
@@ -141,5 +155,9 @@ public class Logger implements Runnable, BruteListener{
      */
     public void close() {
         this.running = false;
+    }
+
+    public static boolean hasInstanceRunning() {
+        return isInstanceRunning;
     }
 }

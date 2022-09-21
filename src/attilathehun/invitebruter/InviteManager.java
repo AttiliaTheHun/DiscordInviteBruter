@@ -2,10 +2,11 @@ package attilathehun.invitebruter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class InviteManager {
+public class InviteManager implements Serializable {
     private Bruter bruter;
 
     public InviteManager(Bruter b) {

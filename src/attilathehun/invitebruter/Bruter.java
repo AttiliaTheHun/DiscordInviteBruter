@@ -1,12 +1,13 @@
 package attilathehun.invitebruter;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Bruter implements Runnable {
+public class Bruter implements Runnable, Serializable {
 
-    private final transient List<BruteListener> listeners = new ArrayList<>();
+    private transient List<BruteListener> listeners;
 
     private static final String BASE_URL = "https://discord.gg/";
     final static String CHARSET = "aAbBcCdDeEfFgGiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789";
@@ -24,6 +25,7 @@ public class Bruter implements Runnable {
      * @param end data for the final position of this Bruter
      */
     public Bruter(int name, SourceArrayVault start, int[] end) {
+        this.listeners = new ArrayList<BruteListener>();
         this.currentPosition = start;
         this.endPosition = end;
         this.name = name;
@@ -31,15 +33,26 @@ public class Bruter implements Runnable {
 
     private Bruter() {}
 
-    //TODO: skip 9-characters long invites for Discord uses no such thing
     @Override
     public void run() {
         logMessage("Thread #" + name + " started\n");
         while (running) {
-            if(currentPosition.equals(endPosition)){
+            if (currentPosition.equals(endPosition)){
                 finish();
             }
             attempt();
+            if (currentPosition.isAtFinalPosition()) {
+                /* We should not need to check for ArrayIndexOutOfBoundsException because the Bruter should reach
+                 * its final position and finish before ever getting short on invite link lengths
+                 */
+                for (int i = 0; i < InviteManager.Invite.getAvailableLengths().length; i++) {
+                    if (currentPosition.length() == InviteManager.Invite.getAvailableLengths()[i]) {
+                        currentPosition = new SourceArrayVault(new int[InviteManager.Invite.getAvailableLengths()[i + 1]]);
+                        break;
+                    }
+                }
+                continue;
+            }
             currentPosition.increase();
         }
     }
@@ -59,7 +72,7 @@ public class Bruter implements Runnable {
                 logAttemptUnsuccessful(message);
             }
         } catch (IOException e) {
-            logMessage(e.getMessage());
+            logMessage(e.getMessage() + ("\n"));
         }
     }
 
@@ -137,6 +150,10 @@ public class Bruter implements Runnable {
 
     public static String getBaseURL() {
         return Bruter.BASE_URL;
+    }
+
+    public void refresh() {
+        this.listeners = new ArrayList<BruteListener>();
     }
 
 }

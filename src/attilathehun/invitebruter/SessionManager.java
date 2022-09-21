@@ -11,11 +11,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 public class SessionManager {
 
-    private int[] START;
-    private int[] END;
+    private int[] START = null;
+    private int[] END = null;
     private int threadCount = -1;
     private int charsetLength = -1;
     private Logger logger;
@@ -53,10 +54,27 @@ public class SessionManager {
             objectOutputStream.close();
             dataFileOutputStream.close();
         }catch (Exception e){
-            System.out.println("Can not save the data");
+            System.out.println("Can not save the data: " + e.getMessage());
         } finally {
             s.stop();
         }
+    }
+
+    public static ArrayList<String> savedSessions() {
+        ArrayList<String> saves = new ArrayList<String>();
+        File file  = new File(".");
+        String[] allFiles = file.list();
+
+        if (allFiles != null) {
+            for (String filename : allFiles) {
+                if (filename.startsWith("session")) {
+                    saves.add(filename);
+                }
+            }
+        }
+
+        return saves;
+
     }
 
     public static Session load() {
@@ -92,6 +110,9 @@ public class SessionManager {
 
     public void setLogger(Logger logger) {
         this.logger = logger;
+    }
+    public void setStart() {
+
     }
 
     private boolean parameterCheck() {
@@ -130,7 +151,7 @@ public class SessionManager {
         private int[] START = new int[InviteManager.Invite.getAvailableLengths()[0]];
         private int[] END = new int[InviteManager.Invite.getAvailableLengths()[InviteManager.Invite.getAvailableLengths().length - 1]];
         private int charsetLength;
-        private Logger logger;
+        private transient Logger logger;
 
         private Bruter[] bruters;
         private transient Thread[] threads;
@@ -169,7 +190,7 @@ public class SessionManager {
 
 
         private void startThreads(){
-            logger.logMessage("\nSession started with " + threads.length + " threads " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()));
+            logger.logMessage("\nSession started with " + threads.length + " threads " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now()) + "\n");
             for(Thread t : threads){
                 t.start();
             }
@@ -192,7 +213,7 @@ public class SessionManager {
             this.bruters = new Bruter[getThreadCount()];
             this.threads = new Thread[getThreadCount()];
             for(int i = 0; i < bruters.length; i++){
-                System.out.println("#" + i + ": " + Arrays.toString(startingPositions[i].array()) + " - " + Arrays.toString(endingPositions[i]));
+                //System.out.println("#" + i + ": " + Arrays.toString(startingPositions[i].array()) + " - " + Arrays.toString(endingPositions[i]));
                 bruters[i] = new Bruter(i, startingPositions[i], endingPositions[i]);
                 threads[i] = new Thread(bruters[i]);
                 bruters[i].addListener(logger);
@@ -206,6 +227,7 @@ public class SessionManager {
             this.threads = new Thread[getThreadCount()];
             for(int i = 0; i < bruters.length; i++){
                 threads[i] = new Thread(bruters[i]);
+                bruters[i].refresh();
                 bruters[i].addListener(logger);
             }
         }
@@ -214,8 +236,8 @@ public class SessionManager {
             long BASE_POSSIBILITIES = SourceArrayVault.summarizeSourceArray(getStart());
             SourceArrayVault[] startingPositions = new SourceArrayVault[getThreadCount()];
             long possibilitiesPerThread = calculateTotalPossibilities() / getThreadCount();
-            System.out.println("SESSION_END: " + Arrays.toString(getEnd()) + "\n SESSION_END sum: " + SourceArrayVault.summarizeSourceArray(getEnd()));
-            System.out.println("BASE_POSSIBILITIES: " + BASE_POSSIBILITIES + "\ntotal possibilites: " + calculateTotalPossibilities() + "\npossibilities per thread: " + possibilitiesPerThread);
+            //System.out.println("SESSION_END: " + Arrays.toString(getEnd()) + "\n SESSION_END sum: " + SourceArrayVault.summarizeSourceArray(getEnd()));
+            //System.out.println("BASE_POSSIBILITIES: " + BASE_POSSIBILITIES + "\ntotal possibilites: " + calculateTotalPossibilities() + "\npossibilities per thread: " + possibilitiesPerThread);
             for (int i = 0; i < getThreadCount(); i++) {
                 startingPositions[i] = SourceArrayVault.fromNumber(possibilitiesPerThread * i + BASE_POSSIBILITIES);
                 if (startingPositions[i].length() < START.length) {
@@ -226,6 +248,7 @@ public class SessionManager {
             return startingPositions;
         }
 
+        //TODO:
         private int[][] getEndingPositions() {
             long END_POSSIBILITIES = SourceArrayVault.summarizeSourceArray(getEnd());
             int[][] endingPositions = new int[getThreadCount()][];

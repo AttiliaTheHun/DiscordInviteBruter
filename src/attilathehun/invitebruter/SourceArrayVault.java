@@ -1,6 +1,7 @@
 package attilathehun.invitebruter;
 
 import javax.sound.midi.SysexMessage;
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -12,10 +13,10 @@ import java.util.Arrays;
  * Therefore a value within a source array may never cross a specific boundary, which represents
  * the charset String's length
  */
-public class SourceArrayVault {
+public class SourceArrayVault implements Serializable {
 
     private int[] source;
-    private static int boundary = - 1; //Regulates position swaps, must be positive, -1 indicates none has been set
+    private static int boundary = - 1; //Regulates position swaps, must be positive, -1 indicates none has been set, non-inclusive
 
     // Internal purposes only
     private SourceArrayVault() {}
@@ -38,10 +39,15 @@ public class SourceArrayVault {
     public static void setBoundary(int value) {
         if(value > 0) {
             SourceArrayVault.boundary = value;
+        } else {
+            throw new IllegalArgumentException("The boundary must be a whole number above zero");
         }
     }
 
     public static int getBoundary() {
+        if(!SourceArrayVault.hasBoundary()) {
+            throw new MissingBoundaryException();
+        }
         return boundary;
     }
 
@@ -71,7 +77,7 @@ public class SourceArrayVault {
         if(!SourceArrayVault.hasBoundary()) {
             throw new MissingBoundaryException();
         }
-        System.out.println("increase() call");
+        //System.out.println("increase() call");
         this.add(1);
     }
 
@@ -96,7 +102,11 @@ public class SourceArrayVault {
             throw new MissingBoundaryException();
         }
 
-        System.out.print("array: " + Arrays.toString(array));
+        if(!SourceArrayVault.isSourceArray(array)) {
+            throw new NotASourceArrayException();
+        }
+
+        //System.out.print("array: " + Arrays.toString(array));
 
         long arraysSum = SourceArrayVault.summarizeSourceArray(source) + SourceArrayVault.summarizeSourceArray(array);
         boolean hasEnoughCapacity = SourceArrayVault.summarizeMaxSourceArrayOfLength(source.length) - arraysSum > 0;
@@ -115,7 +125,7 @@ public class SourceArrayVault {
             transitionValue = (source[i] + array[i]) / SourceArrayVault.getBoundary();
             source[i] = (source[i] + array[i]) % SourceArrayVault.getBoundary();
         }
-        System.out.println(" source: " + Arrays.toString(source));
+        //System.out.println(" source: " + Arrays.toString(source));
 
     }
 
@@ -185,7 +195,7 @@ public class SourceArrayVault {
     }
 
     /**
-     * Creeates a SourceArrayVault from possibilities count
+     * Creates a SourceArrayVault from possibilities count
      * @param number the number of possibilities
      * @return a SourceArrayVault equivalent to the possibilities count
      */
@@ -230,7 +240,7 @@ public class SourceArrayVault {
             left -= interCalculation * result[i];
 
         }
-        System.out.println("sourceArray: " + Arrays.toString(result) + " number: " + number);
+        //System.out.println("sourceArray: " + Arrays.toString(result) + " number: " + number);
         return result;
     }
 
@@ -252,7 +262,7 @@ public class SourceArrayVault {
                 break;
             }
         }
-        System.out.println("Length calculated: " + length);
+        //System.out.println("Length calculated: " + length);
         return length;
     }
 
@@ -322,8 +332,10 @@ public class SourceArrayVault {
             throw new MissingBoundaryException();
         }
         long sum = 0;
-        if (!(array.length > 1)) {
+        if (!(array.length > 0)) {
             return sum;
+        } else if (!(array.length > 1)) {
+            return array[0];
         }
         for (int i = 0; i < array.length; i++) {
 
@@ -356,12 +368,12 @@ public class SourceArrayVault {
     /**
      * Increase array's length while preserving it as a source array
      * @param array target array
-     * @param newLenght length of the new array
+     * @param newLength length of the new array
      * @return array of the given length with values of the old array on correct indexes
      */
-    public static int[] prolongArray(int[] array, int newLenght) {
-        int[] result = new int[newLenght];
-        final int lengthDifference = newLenght - array.length;
+    public static int[] prolongArray(int[] array, int newLength) {
+        int[] result = new int[newLength];
+        final int lengthDifference = newLength - array.length;
 
         if (lengthDifference < 0) {
             return new int[]{};
@@ -388,15 +400,43 @@ public class SourceArrayVault {
         return null;
     }
 
+    /**
+     * Checks whether next increase() call will change source array's length
+     * @return true if the source array is full and needs prolonging
+     */
+    public boolean isAtFinalPosition() {
+        for (int i : source) {
+            if (i != SourceArrayVault.getBoundary() - 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static class MissingBoundaryException extends RuntimeException {
 
+        public MissingBoundaryException() {}
+
+        public MissingBoundaryException(String s) {
+            super(s);
+        }
     }
     public static class OutOfBoundsException extends  RuntimeException {
 
+        public OutOfBoundsException() {}
+
+        public OutOfBoundsException (String s) {
+            super(s);
+        }
     }
 
     public static class NotASourceArrayException extends  RuntimeException {
 
+        public NotASourceArrayException() {}
+
+        public NotASourceArrayException(String s) {
+            super(s);
+        }
     }
 
 }
