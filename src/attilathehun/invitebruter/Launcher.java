@@ -10,12 +10,17 @@ public class Launcher {
     private final int ESTIMATED_MB_OF_MEMORY_PER_THREAD = 20;
     private final int CHARSET_LENGTH = Bruter.getCharsetLength();
 
+    private SessionManager manager;
     private SessionManager.Session session;
 
-    private final Logger logger = new Logger();
+    private Logger logger = Logger.getInstance();
 
 
     public void launch() {
+        if (session == null) {
+            session = manager.create();
+        }
+
         session.start();
     }
 
@@ -25,13 +30,22 @@ public class Launcher {
     }
 
     public void init() {
-        SessionManager manager = new SessionManager();
+        manager = new SessionManager();
         SourceArrayVault.setBoundary(CHARSET_LENGTH);
         manager.setCharsetLength(CHARSET_LENGTH);
         manager.setThreadCount(calculateThreadCount());
         //manager.setThreadCount(1);
         manager.setLogger(getLogger());
-        session = manager.create();
+    }
+
+    public void setStart(String start) {
+        if (manager != null)
+        manager.setStart(SourceArrayVault.fromString(start, Bruter.getCharset()).array());
+    }
+
+    public void setEnd(String end) {
+        if (manager != null)
+            manager.setEnd(SourceArrayVault.fromString(end, Bruter.getCharset()).array());
     }
 
     /**
@@ -82,11 +96,20 @@ public class Launcher {
         return filename;
     }
 
-    public ArrayList<String> list() {
+    public ArrayList<String> savedSessionsList() {
         return SessionManager.savedSessions();
     }
+
     public Logger getLogger() {
         return logger;
+    }
+
+    public void refresh() {
+        logger = Logger.getInstance();
+    }
+
+    public void clearSessions() {
+        SessionManager.clear();
     }
 
 }

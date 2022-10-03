@@ -9,8 +9,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class SessionManager {
@@ -100,6 +98,13 @@ public class SessionManager {
         }
     }
 
+    public static void clear() {
+        for (String name : SessionManager.savedSessions()) {
+            File file = new File(name);
+            file.delete();
+        }
+    }
+
     public void setThreadCount(int threadCount) {
         this.threadCount = threadCount;
     }
@@ -111,8 +116,12 @@ public class SessionManager {
     public void setLogger(Logger logger) {
         this.logger = logger;
     }
-    public void setStart() {
+    public void setStart(int[] start) {
+        this.START = start;
+    }
 
+    public void setEnd(int[] end) {
+        this.END = end;
     }
 
     private boolean parameterCheck() {
@@ -127,6 +136,19 @@ public class SessionManager {
         if (this.threadCount == -1) {
             return false;
         }
+
+        if (START != null) {
+            if (SourceArrayVault.isSourceArray(START) == false) {
+                return false;
+            }
+        }
+
+        if (END != null) {
+            if (SourceArrayVault.isSourceArray(END) == false) {
+                return false;
+            }
+        }
+
         return true;
     }
 

@@ -1,6 +1,5 @@
 package attilathehun.invitebruter;
 
-import javax.sound.midi.SysexMessage;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -245,6 +244,27 @@ public class SourceArrayVault implements Serializable {
     }
 
     /**
+     * Creates a SourceArrayVault from a String that represents a code calculated from a source array in the state
+     * of the result source array
+     * @param source String to convert into source array
+     * @param charSet charset the *source* String is compliant to
+     * @return a SourceArrayVault representing the value of the *source* String
+     */
+    public static SourceArrayVault fromString(String source, String charSet) {
+
+        int[] array = new int[source.length()];
+        char[] chars = source.toCharArray();
+        for (int i = 0; i < array.length; i++) {
+            int position = charSet.indexOf(chars[i]);
+            if (position == -1) {
+                throw new RuntimeException("cannot create a source array: Source String is not compliant to the charset provided");
+            }
+            array[i] = position;
+        }
+        return new SourceArrayVault(array);
+    }
+
+    /**
      * Helper method for SourceArrayVault#sourceArrayFromNumber()
      * @param number number of possibilities to create source array for
      * @return length of the source array
@@ -386,7 +406,7 @@ public class SourceArrayVault implements Serializable {
                 result[i] = array[i - lengthDifference];
             }
         }
-        //System.out.println(Arrays.toString(array) + " : " + newLenght + " : " + Arrays.toString(result));
+        //System.out.println(Arrays.toString(array) + " : " + newLength + " : " + Arrays.toString(result));
         return result;
     }
 

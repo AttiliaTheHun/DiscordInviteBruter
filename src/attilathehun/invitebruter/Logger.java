@@ -1,4 +1,4 @@
-/**
+/*
  * The Bruter's Logger, logs results of individual attempts
  */
 package attilathehun.invitebruter;
@@ -18,9 +18,18 @@ public class Logger implements Runnable, BruteListener{
     private FileOutputStream logFileOutputStream;
 
     private boolean consoleMode = false;
+    private static Logger instance;
 
-    public Logger(){
+    private Logger(){
         init();
+    }
+
+    static {
+        instance = new Logger();
+    }
+
+    public static Logger getInstance() {
+        return instance;
     }
 
     /**
@@ -72,7 +81,7 @@ public class Logger implements Runnable, BruteListener{
     }
 
     /**
-     * Initializes Logger necessary resources
+     * Initializes Logger's necessary resources
      */
     private void init(){
         try{
@@ -107,6 +116,9 @@ public class Logger implements Runnable, BruteListener{
         }
     }
 
+    /**
+     * Clears the Logger's mess.
+     */
     public static void clear() {
         if (Logger.hasInstanceRunning()) {
             throw new RuntimeException("Cannot clear when a Logger instance is running");
@@ -155,6 +167,20 @@ public class Logger implements Runnable, BruteListener{
      */
     public void close() {
         this.running = false;
+        try {
+            this.logFileOutputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Logger.isInstanceRunning = false;
+    }
+
+    /**
+     * Refreshes the Logger in case it was closed.
+     * @see Logger#close()
+     */
+    public static void refresh() {
+        Logger.instance = new Logger();
     }
 
     public static boolean hasInstanceRunning() {

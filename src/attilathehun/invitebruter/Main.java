@@ -6,18 +6,13 @@ import java.util.Scanner;
 public class Main {
 
     private static final Launcher launcher = new Launcher();
-    private static final Thread logThread = new Thread(launcher.getLogger());
+    private static Thread logThread = new Thread(launcher.getLogger());
     private static final Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) {
+        boolean sessionRunning = false;
         logThread.start();
-        System.out.println("Welcome to Discord Invite Bruter");
-        System.out.println("start -[\"begin xKjdf8P\"] -[\"end ZZZZZZZ\"]: start a new session");
-        System.out.println("exit: close the session and the program");
-        System.out.println("save -[n]: save and close the current session, -n to save it to a new file");
-        System.out.println("load -[f] [\"session3\"]: resumes the latest session, -f to load a specific session");
-        System.out.println("clear: clear log and dump files from previous sessions");
-        System.out.println("list: list saved sessions");
+        printInfo();
         while (true) {
             String input = sc.nextLine();
 
@@ -45,27 +40,53 @@ public class Main {
                 launcher.shutdown();
                 continue;
             }
-            //TODO: make it possible to "start" a new session with a specific START END positions
+
             if (input.startsWith("start")) {
+                launcher.init();
                 String start = "";
                 String end = "";
                 if (input.contains("-begin")) {
-
+                    String substring = input.substring(input.indexOf("-begin") + "-begin".length());
+                    int spaceIndex = substring.trim().indexOf(" ");
+                    if (spaceIndex == -1) {
+                        start = substring.trim();
+                    } else {
+                        start = substring.substring(0, spaceIndex).trim();
+                    }
+                    launcher.setStart(start);
                 }
                 if (input.contains("-end")) {
-                    end = input.substring(input.indexOf("-end") + "-end".length()).trim();
+                    String substring = input.substring(input.indexOf("-end") + "-end".length());
+                    int spaceIndex = substring.trim().indexOf(" ");
+                    if (spaceIndex == -1) {
+                        end = substring.trim();
+                    } else {
+                        end = substring.substring(0, spaceIndex).trim();
+                    }
+                    launcher.setEnd(end);
                 }
 
-                if (start.equals("")) {
+                launcher.launch();
+                System.out.println("Session started");
+                sessionRunning = true;
+            }
 
-
-                } else if (end.equals("")) {
-                    launcher.init();
-                    launcher.launch();
-                } else {
-
+            isItClear:
+            if (input.startsWith("clear")) {
+                if (sessionRunning) {
+                    System.out.println("Cannot perform clearing when a session is running");
+                    break isItClear;
                 }
-
+                launcher.getLogger().close();
+                Logger.clear();
+                Logger.refresh();
+                launcher.refresh();
+                logThread = new Thread(launcher.getLogger());
+                logThread.start();
+                if (input.contains("-s")) {
+                    launcher.clearSessions();
+                }
+                System.out.println("All clear");
             }
 
             switch (input) {
@@ -77,19 +98,26 @@ public class Main {
                     break;
                 case "list":
                 case "saves":
+                case "saved":
                 case "sessions":
                     System.out.println("Available local sessions: ");
-                    ArrayList<String> sessions = launcher.list();
+                    ArrayList<String> sessions = launcher.savedSessionsList();
                     for (String session : sessions) {
                         System.out.println("> " + session);
                     }
                     break;
-                case "clear":
-                    Logger.clear();
-                    System.out.println("All clear");
             }
-
         }
 
+    }
+
+    private static void printInfo() {
+        System.out.println("Welcome to Discord Invite Bruter");
+        System.out.println("start -[\"begin xKjdf8P\"] -[\"end ZZZZZZZ\"]: start a new session");
+        System.out.println("exit: close the session and the program");
+        System.out.println("save -[n]: save and close the current session, -n to save it to a new file");
+        System.out.println("load -[f] [\"session3\"]: resumes the latest session, -f to load a specific session");
+        System.out.println("clear -[s]: clear log and dump files from previous sessions, -s to clear saved sessions");
+        System.out.println("list: list saved sessions");
     }
 }
